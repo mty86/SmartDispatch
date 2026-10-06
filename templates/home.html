@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Inicio de Sesión Exitoso | SmartDispatch{% endblock %}
+
+{% block content %}
+<div class="w-full max-w-lg my-8">
+    <div class="bg-white rounded-3xl floating-card-shadow border border-slate-200/60 overflow-hidden text-center p-8 sm:p-10 transition-all duration-300">
+        <!-- Ícono de éxito -->
+        <div class="w-20 h-20 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 flex items-center justify-center mx-auto mb-6 shadow-sm">
+            <i class="fa-solid fa-circle-check text-4xl"></i>
+        </div>
+
+        <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">
+            ¡Sesión Iniciada!
+        </h1>
+        <p class="text-sm text-slate-500 mb-8">
+            Has ingresado correctamente al sistema.
+        </p>
+
+        <!-- Tarjeta con datos del usuario autenticado -->
+        <div class="bg-slate-50 rounded-2xl p-6 border border-slate-200/80 text-left space-y-3 mb-8">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-200">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Usuario:</span>
+                <span class="text-sm font-semibold text-slate-800">{{ session.get('nombre') }}</span>
+            </div>
+            <div class="flex justify-between items-center pb-3 border-b border-slate-200">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Correo:</span>
+                <span class="text-sm font-mono text-slate-700">{{ session.get('email') }}</span>
+            </div>
+            <div class="flex justify-between items-center pb-3 border-b border-slate-200">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Rol Asignado:</span>
+                <div>
+                    {% if session.get('rol') == 'cliente' %}
+                        <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                            <i class="fa-solid fa-user mr-1"></i> Cliente
+                        </span>
+                    {% elif session.get('rol') == 'soporte' %}
+                        <span class="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-300">
+                            <i class="fa-solid fa-headset mr-1"></i> Personal de Soporte
+                        </span>
+                    {% else %}
+                        <span class="px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800 border border-purple-300">
+                            <i class="fa-solid fa-crown mr-1"></i> Administrador
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+            {% if session.get('empresa') %}
+            <div class="flex justify-between items-center">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Empresa / Depto:</span>
+                <span class="text-sm text-slate-700">{{ session.get('empresa') }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Botón Salir -->
+        <a href="{{ url_for('logout') }}"
+           class="inline-flex items-center justify-center w-full py-3 px-6 rounded-xl font-semibold text-white bg-rose-600 hover:bg-rose-700 shadow-lg shadow-rose-600/25 transition duration-150 transform hover:-translate-y-0.5">
+            <i class="fa-solid fa-right-from-bracket mr-2"></i> Cerrar Sesión
+        </a>
+    </div>
+</div>
+{% endblock %}

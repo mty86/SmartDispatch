@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SmartDispatch | Login{% endblock %}</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Sombra flotante pronunciada y suave para el formulario */
+        .floating-card-shadow {
+            box-shadow: 0 20px 50px -10px rgba(15, 23, 42, 0.22),
+                        0 10px 25px -5px rgba(15, 23, 42, 0.1),
+                        0 0 0 1px rgba(15, 23, 42, 0.05);
+        }
+    </style>
+</head>
+<body class="min-h-full flex flex-col font-sans text-slate-800 antialiased bg-slate-100">
+
+    <!-- ALERTAS FLASH (Centradas y flotantes) -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-4">
+                <div class="space-y-2">
+                    {% for category, message in messages %}
+                        {% set color_class = 'bg-blue-50 text-blue-900 border-blue-200' %}
+                        {% set icon_class = 'fa-circle-info text-blue-500' %}
+                        {% if category == 'success' %}
+                            {% set color_class = 'bg-emerald-50 text-emerald-900 border-emerald-300' %}
+                            {% set icon_class = 'fa-circle-check text-emerald-600' %}
+                        {% elif category == 'danger' %}
+                            {% set color_class = 'bg-rose-50 text-rose-900 border-rose-300' %}
+                            {% set icon_class = 'fa-circle-xmark text-rose-600' %}
+                        {% elif category == 'warning' %}
+                            {% set color_class = 'bg-amber-50 text-amber-900 border-amber-300' %}
+                            {% set icon_class = 'fa-triangle-exclamation text-amber-600' %}
+                        {% endif %}
+                        <div class="flex items-center justify-between p-4 border rounded-2xl shadow-lg {{ color_class }} backdrop-blur-sm">
+                            <div class="flex items-center space-x-3 text-sm font-medium">
+                                <i class="fa-solid {{ icon_class }} text-base"></i>
+                                <span>{{ message }}</span>
+                            </div>
+                            <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600 ml-3">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- CONTENIDO PRINCIPAL CENTRADO -->
+    <main class="flex-1 w-full flex items-center justify-center p-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- PIE DE PÁGINA DISCRETO -->
+    <footer class="py-4 text-center text-xs text-slate-400">
+        SmartDispatch &copy; 2026 • Sistema de Soporte
+    </footer>
+
+</body>
+</html>
