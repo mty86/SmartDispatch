@@ -152,8 +152,232 @@ def register():
 @app.route("/home")
 @login_required
 def home():
-    """Pantalla tras iniciar sesión correctamente."""
-    return render_template("home.html")
+    """Pantalla principal según el rol del usuario."""
+
+    tickets_lista = []
+
+    # Si es soporte o administrador, cargar los tickets
+    if session.get("rol") in ("soporte", "admin"):
+
+        conn = database.get_db()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            SELECT
+                t.id,
+                t.descripcion,
+                t.categoria,
+                t.prioridad,
+                t.estado,
+                t.creado_en,
+                u.nombre AS usuario_nombre,
+                u.email AS usuario_email
+            FROM tickets t
+            JOIN usuarios u ON t.usuario_id = u.id
+            ORDER BY t.creado_en DESC
+        """)
+
+        tickets_lista = cursor.fetchall()
+        conn.close()
+
+    return render_template(
+        "home.html",
+        tickets=tickets_lista
+    )
+
+
+def clasificar_ticket(descripcion):
+    """
+    Clasificación automática simulada.
+    Posteriormente será reemplazada por un modelo de Machine Learning.
+    """
+
+    texto = descripcion.lower()
+
+    # Categoría y prioridad por defecto
+    categoria = "Software"
+    prioridad = "Media"
+
+    # -------------------------
+    # HARDWARE
+    # -------------------------
+
+    if any(palabra in texto for palabra in [
+        "computadora",
+        "computador",
+        "pc",
+        "laptop",
+        "monitor",
+        "teclado",
+        "mouse",
+        "pantalla",
+        "no enciende"
+    ]):
+        categoria = "Hardware"
+
+
+    # -------------------------
+    # REDES
+    # -------------------------
+
+    elif any(palabra in texto for palabra in [
+        "internet",
+        "wifi",
+        "wi-fi",
+        "red",
+        "conexion",
+        "conexión",
+        "router"
+    ]):
+        categoria = "Redes"
+
+
+    # -------------------------
+    # IMPRESORAS
+    # -------------------------
+
+    elif any(palabra in texto for palabra in [
+        "impresora",
+        "imprimir",
+        "impresión",
+        "impresion",
+        "cartucho",
+        "toner",
+        "tóner"
+    ]):
+        categoria = "Impresoras"
+
+
+    # -------------------------
+    # SOFTWARE
+    # -------------------------
+
+    elif any(palabra in texto for palabra in [
+        "programa",
+        "aplicacion",
+        "aplicación",
+        "software",
+        "sistema",
+        "error",
+        "windows"
+    ]):
+        categoria = "Software"
+
+
+    # -------------------------
+    # PRIORIDAD ALTA
+    # -------------------------
+
+    if any(palabra in texto for palabra in [
+        "urgente",
+        "urgencia",
+        "emergencia",
+        "crítico",
+        "critico",
+        "muy importante",
+        "no funciona",
+        "no enciende",
+        "quemado"
+    ]):
+        prioridad = "Alta"
+
+
+    # -------------------------
+    # PRIORIDAD BAJA
+    # -------------------------
+
+    elif any(palabra in texto for palabra in [
+        "cuando puedan",
+        "sin urgencia",
+        "no es urgente"
+    ]):
+        prioridad = "Baja"
+
+
+    return categoria, prioridad
+
+@app.route("/tickets/crear", methods=["POST"])
+@login_required
+def crear_ticket():
+    """Crea un nuevo ticket enviado por un cliente."""
+
+    # Solo los clientes pueden crear tickets
+    if session.get("rol") != "cliente":
+        flash("Solo los clientes pueden crear tickets.", "danger")
+        return redirect(url_for("home"))
+
+    descripcion = request.form.get("descripcion", "").strip()
+
+    if not descripcion:
+        flash("Por favor describe el problema.", "warning")
+        return redirect(url_for("home"))
+
+    conn = database.get_db()
+    cursor = conn.cursor()
+
+    # Clasificar el ticket
+    categoria, prioridad = clasificar_ticket(descripcion)
+
+    # Guardar el ticket
+    cursor.execute("""
+    INSERT INTO tickets (
+        usuario_id,
+        descripcion,
+        categoria,
+        prioridad,
+        estado
+    )
+    VALUES (?, ?, ?, ?, ?)
+""", (
+    session["user_id"],
+    descripcion,
+    categoria,
+    prioridad,
+    "Pendiente"
+))
+
+    conn.commit()
+    conn.close()
+
+    flash("¡Ticket creado correctamente!", "success")
+
+    return redirect(url_for("home"))
+
+@app.route("/tickets")
+@login_required
+def tickets():
+    """Muestra los tickets al personal de soporte."""
+
+    # Solo soporte y administradores pueden consultar todos los tickets
+    if session.get("rol") not in ("soporte", "admin"):
+        flash("No tienes permiso para consultar los tickets.", "danger")
+        return redirect(url_for("home"))
+
+    conn = database.get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            t.id,
+            t.descripcion,
+            t.categoria,
+            t.prioridad,
+            t.estado,
+            t.creado_en,
+            u.nombre AS usuario_nombre,
+            u.email AS usuario_email
+        FROM tickets t
+        JOIN usuarios u ON t.usuario_id = u.id
+        ORDER BY t.creado_en DESC
+    """)
+
+    tickets_lista = cursor.fetchall()
+    conn.close()
+
+    return render_template(
+        "home.html",
+        tickets=tickets_lista
+    )
 
 @app.route("/logout")
 def logout():

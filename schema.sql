@@ -38,3 +38,36 @@ CREATE TABLE IF NOT EXISTS historial_accesos (
 -- ÍNDICE PARA BÚSQUEDA RÁPIDA POR CORREO
 -- ==========================================================
 CREATE INDEX IF NOT EXISTS idx_usuarios_email ON usuarios(email);
+
+-- ==========================================================
+-- 4. TABLA DE TICKETS
+-- ==========================================================
+
+CREATE TABLE IF NOT EXISTS tickets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    usuario_id INTEGER NOT NULL,
+    descripcion TEXT NOT NULL,
+    categoria VARCHAR(100),
+    prioridad VARCHAR(20) DEFAULT 'Media',
+    tecnico_asignado_id INTEGER,
+    estado VARCHAR(30) DEFAULT 'Pendiente',
+    creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (usuario_id)
+        REFERENCES usuarios(id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (tecnico_asignado_id)
+        REFERENCES usuarios(id)
+        ON DELETE SET NULL
+);
+
+-- Índices para consultar tickets rápidamente
+CREATE INDEX IF NOT EXISTS idx_tickets_usuario
+ON tickets(usuario_id);
+
+CREATE INDEX IF NOT EXISTS idx_tickets_tecnico
+ON tickets(tecnico_asignado_id);
+
+CREATE INDEX IF NOT EXISTS idx_tickets_estado
+ON tickets(estado);
