@@ -8,6 +8,7 @@ from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from werkzeug.security import check_password_hash, generate_password_hash
 import database
+from ml.clasificador import clasificar_ticket
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "smartdispatch_login_secret_key_2026")
@@ -118,6 +119,12 @@ def register():
             flash("La contraseña debe tener al menos 6 caracteres.", "warning")
             return render_template("register.html")
 
+        # La creación pública solo permite cuentas de cliente o soporte.
+        # Las cuentas de administrador se provisionan fuera del formulario público.
+        if rol not in ("cliente", "soporte"):
+            flash("El rol solicitado no está permitido para el registro público.", "danger")
+            return render_template("register.html")
+
         conn = database.get_db()
         cursor = conn.cursor()
 
@@ -152,149 +159,85 @@ def register():
 @app.route("/home")
 @login_required
 def home():
-    """Pantalla principal según el rol del usuario."""
+    """Muestra un dashboard distinto para cada rol."""
+    rol = session.get("rol")
+    conn = database.get_db()
+    cursor = conn.cursor()
 
-    tickets_lista = []
+    cursor.execute("""
+        SELECT t.id, t.descripcion, t.categoria, t.prioridad, t.estado,
+               t.creado_en, u.nombre AS usuario_nombre, u.email AS usuario_email,
+               tecnico.nombre AS tecnico_nombre
+        FROM tickets t
+        JOIN usuarios u ON t.usuario_id = u.id
+        LEFT JOIN usuarios tecnico ON t.tecnico_asignado_id = tecnico.id
+        WHERE (? != 'cliente' OR t.usuario_id = ?)
+        ORDER BY CASE t.prioridad WHEN 'Alta' THEN 0 WHEN 'Media' THEN 1 ELSE 2 END,
+                 t.creado_en DESC
+    """, (rol, session["user_id"]))
+    tickets_lista = cursor.fetchall()
 
-    # Si es soporte o administrador, cargar los tickets
-    if session.get("rol") in ("soporte", "admin"):
-
-        conn = database.get_db()
-        cursor = conn.cursor()
-
+    if rol == "cliente":
         cursor.execute("""
-            SELECT
-                t.id,
-                t.descripcion,
-                t.categoria,
-                t.prioridad,
-                t.estado,
-                t.creado_en,
-                u.nombre AS usuario_nombre,
-                u.email AS usuario_email
-            FROM tickets t
-            JOIN usuarios u ON t.usuario_id = u.id
-            ORDER BY t.creado_en DESC
-        """)
-
-        tickets_lista = cursor.fetchall()
+            SELECT COUNT(*) AS total,
+                   SUM(CASE WHEN estado = 'Pendiente' THEN 1 ELSE 0 END) AS pendientes,
+                   SUM(CASE WHEN estado = 'En proceso' THEN 1 ELSE 0 END) AS en_proceso,
+                   SUM(CASE WHEN estado = 'Resuelto' THEN 1 ELSE 0 END) AS resueltos
+            FROM tickets WHERE usuario_id = ?
+        """, (session["user_id"],))
+        stats = cursor.fetchone()
         conn.close()
+        return render_template("client_dashboard.html", tickets=tickets_lista, stats=stats)
 
-    return render_template(
-        "home.html",
-        tickets=tickets_lista
-    )
+    if rol == "soporte":
+        cursor.execute("""
+            SELECT COUNT(*) AS total,
+                   SUM(CASE WHEN estado = 'Pendiente' THEN 1 ELSE 0 END) AS pendientes,
+                   SUM(CASE WHEN estado = 'En proceso' THEN 1 ELSE 0 END) AS en_proceso,
+                   SUM(CASE WHEN estado = 'Resuelto' THEN 1 ELSE 0 END) AS resueltos
+            FROM tickets
+        """)
+        stats = cursor.fetchone()
+        conn.close()
+        return render_template("support_dashboard.html", tickets=tickets_lista, stats=stats)
 
+    if rol == "admin":
+        cursor.execute("""
+            SELECT COUNT(*) AS total,
+                   SUM(CASE WHEN estado = 'Pendiente' THEN 1 ELSE 0 END) AS pendientes,
+                   SUM(CASE WHEN estado = 'En proceso' THEN 1 ELSE 0 END) AS en_proceso,
+                   SUM(CASE WHEN estado = 'Resuelto' THEN 1 ELSE 0 END) AS resueltos
+            FROM tickets
+        """)
+        stats = cursor.fetchone()
+        cursor.execute("""
+            SELECT categoria, COUNT(*) AS total
+            FROM tickets GROUP BY categoria ORDER BY total DESC, categoria
+        """)
+        categorias = cursor.fetchall()
+        cursor.execute("SELECT COUNT(*) AS total FROM usuarios")
+        usuarios_total = cursor.fetchone()["total"]
+        cursor.execute("SELECT COUNT(*) AS total FROM usuarios WHERE estado = 'activo'")
+        usuarios_activos = cursor.fetchone()["total"]
+        cursor.execute("""
+            SELECT u.id, u.nombre, u.email, u.empresa, u.estado, u.creado_en,
+                   r.nombre AS rol
+            FROM usuarios u JOIN roles r ON u.rol_id = r.id
+            ORDER BY u.creado_en DESC LIMIT 8
+        """)
+        usuarios = cursor.fetchall()
+        conn.close()
+        return render_template(
+            "admin_dashboard.html", tickets=tickets_lista, stats=stats,
+            categorias=categorias, usuarios=usuarios,
+            usuarios_total=usuarios_total, usuarios_activos=usuarios_activos
+        )
 
-def clasificar_ticket(descripcion):
-    """
-    Clasificación automática simulada.
-    Posteriormente será reemplazada por un modelo de Machine Learning.
-    """
+    conn.close()
+    session.clear()
+    flash("El rol de esta cuenta no es válido. Inicia sesión de nuevo.", "warning")
+    return redirect(url_for("login"))
 
-    texto = descripcion.lower()
-
-    # Categoría y prioridad por defecto
-    categoria = "Software"
-    prioridad = "Media"
-
-    # -------------------------
-    # HARDWARE
-    # -------------------------
-
-    if any(palabra in texto for palabra in [
-        "computadora",
-        "computador",
-        "pc",
-        "laptop",
-        "monitor",
-        "teclado",
-        "mouse",
-        "pantalla",
-        "no enciende"
-    ]):
-        categoria = "Hardware"
-
-
-    # -------------------------
-    # REDES
-    # -------------------------
-
-    elif any(palabra in texto for palabra in [
-        "internet",
-        "wifi",
-        "wi-fi",
-        "red",
-        "conexion",
-        "conexión",
-        "router"
-    ]):
-        categoria = "Redes"
-
-
-    # -------------------------
-    # IMPRESORAS
-    # -------------------------
-
-    elif any(palabra in texto for palabra in [
-        "impresora",
-        "imprimir",
-        "impresión",
-        "impresion",
-        "cartucho",
-        "toner",
-        "tóner"
-    ]):
-        categoria = "Impresoras"
-
-
-    # -------------------------
-    # SOFTWARE
-    # -------------------------
-
-    elif any(palabra in texto for palabra in [
-        "programa",
-        "aplicacion",
-        "aplicación",
-        "software",
-        "sistema",
-        "error",
-        "windows"
-    ]):
-        categoria = "Software"
-
-
-    # -------------------------
-    # PRIORIDAD ALTA
-    # -------------------------
-
-    if any(palabra in texto for palabra in [
-        "urgente",
-        "urgencia",
-        "emergencia",
-        "crítico",
-        "critico",
-        "muy importante",
-        "no funciona",
-        "no enciende",
-        "quemado"
-    ]):
-        prioridad = "Alta"
-
-
-    # -------------------------
-    # PRIORIDAD BAJA
-    # -------------------------
-
-    elif any(palabra in texto for palabra in [
-        "cuando puedan",
-        "sin urgencia",
-        "no es urgente"
-    ]):
-        prioridad = "Baja"
-
-
-    return categoria, prioridad
 
 @app.route("/tickets/crear", methods=["POST"])
 @login_required
@@ -346,38 +289,38 @@ def crear_ticket():
 @app.route("/tickets")
 @login_required
 def tickets():
-    """Muestra los tickets al personal de soporte."""
-
-    # Solo soporte y administradores pueden consultar todos los tickets
+    """Acceso directo a la cola de tickets para soporte y administración."""
     if session.get("rol") not in ("soporte", "admin"):
         flash("No tienes permiso para consultar los tickets.", "danger")
+        return redirect(url_for("home"))
+    return redirect(url_for("home"))
+
+
+@app.route("/tickets/<int:ticket_id>/estado", methods=["POST"])
+@login_required
+def actualizar_estado_ticket(ticket_id):
+    """Permite a soporte y administración actualizar el estado de un ticket."""
+    if session.get("rol") not in ("soporte", "admin"):
+        flash("No tienes permiso para actualizar tickets.", "danger")
+        return redirect(url_for("home"))
+
+    estado = request.form.get("estado", "").strip()
+    if estado not in ("Pendiente", "En proceso", "Resuelto"):
+        flash("Selecciona un estado válido.", "warning")
         return redirect(url_for("home"))
 
     conn = database.get_db()
     cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT
-            t.id,
-            t.descripcion,
-            t.categoria,
-            t.prioridad,
-            t.estado,
-            t.creado_en,
-            u.nombre AS usuario_nombre,
-            u.email AS usuario_email
-        FROM tickets t
-        JOIN usuarios u ON t.usuario_id = u.id
-        ORDER BY t.creado_en DESC
-    """)
-
-    tickets_lista = cursor.fetchall()
+    cursor.execute("UPDATE tickets SET estado = ? WHERE id = ?", (estado, ticket_id))
+    actualizado = cursor.rowcount > 0
+    conn.commit()
     conn.close()
 
-    return render_template(
-        "home.html",
-        tickets=tickets_lista
-    )
+    if actualizado:
+        flash(f"El ticket #{ticket_id} ahora está: {estado}.", "success")
+    else:
+        flash("No se encontró ese ticket.", "warning")
+    return redirect(url_for("home"))
 
 @app.route("/logout")
 def logout():
@@ -386,4 +329,4 @@ def logout():
     return redirect(url_for("login"))
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    app.run(host="127.0.0.1", port=5000, debug=False)

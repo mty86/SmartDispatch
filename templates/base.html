@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" class="h-full bg-slate-100">
+<html lang="es" class="h-full bg-slate-50">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,7 +16,7 @@
         }
     </style>
 </head>
-<body class="min-h-full flex flex-col font-sans text-slate-800 antialiased bg-slate-100">
+<body class="min-h-full flex flex-col font-sans text-slate-800 antialiased bg-slate-50">
 
     <!-- ALERTAS FLASH (Centradas y flotantes) -->
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -52,7 +52,7 @@
     {% endwith %}
 
     <!-- CONTENIDO PRINCIPAL CENTRADO -->
-    <main class="flex-1 w-full flex items-center justify-center p-4">
+    <main class="flex-1 w-full flex items-start justify-center px-4 py-8 sm:px-6 lg:px-8">
         {% block content %}{% endblock %}
     </main>
 

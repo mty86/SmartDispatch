@@ -1,44 +1,69 @@
-# SmartDispatch
-# SmartDispatch — Aplicación Web Instalable (PWA) de Clasificación y Asignación Automática de Tickets
+# SmartDispatch: clasificación de tickets con Machine Learning
 
-## 1. Problemática a resolver
-En las empresas de servicios y soporte técnico de campo, la gestión y asignación manual de reportes de incidentes genera cuellos de botella operativos. El tiempo que toma a un operador leer una solicitud, evaluar su urgencia y decidir a qué técnico asignársela incrementa el tiempo de respuesta ante fallas críticas y conduce a asignaciones ineficientes.
+Aplicación web Flask para reportar incidentes de soporte. Un modelo de aprendizaje supervisado de texto predice la categoría del ticket (Hardware, Redes, Impresoras o Software) y su prioridad (Alta, Media o Baja).
 
-## 2. Descripción del proyecto
-SmartDispatch es una **Aplicación Web Progresiva (PWA / Web Instalable)** para la clasificación y asignación automática de tickets de soporte técnico. El sistema recibe como entrada la descripción en texto libre de una falla. Mediante un modelo de Procesamiento de Lenguaje Natural (NLP), clasifica automáticamente la urgencia del reporte y asigna la tarea al técnico disponible cuyo historial refleje la mayor tasa de éxito en la resolución de ese tipo de incidentes, actualizando el estado en tiempo real.
+## Enfoque de Machine Learning
 
-## 3. Rama de la Inteligencia Artificial
-- **Rama principal:** Procesamiento de Lenguaje Natural (NLP) / Machine Learning Supervisado.
-- **Justificación:** Se utiliza NLP para analizar la semántica de la descripción textual del ticket, categorizar el tipo de problema, determinar el nivel de urgencia y emparejar la tarea con el perfil/historial del técnico disponible.
+- **Tipo:** clasificación supervisada de texto.
+- **Preparación:** TF-IDF transforma descripciones en características numéricas, incluyendo unigramas y bigramas.
+- **Algoritmo:** regresión logística, con un clasificador independiente para categoría y prioridad.
+- **Datos:** `ml/tickets_ejemplo.csv`, un conjunto de ejemplos etiquetados incluido para demostración.
+- **Integración:** al crear un ticket, Flask carga el modelo y guarda las dos predicciones en SQLite.
 
-## 4. Caso de uso
-- **Usuario objetivo:** Clientes/Usuarios que reportan incidentes y Técnicos de campo.
-- **Escenario de uso:** Un usuario abre la Web App (o PWA instalada en su dispositivo) y reporta un fallo (*"El router principal parpadea en rojo y no hay internet en la oficina"*). El backend de NLP determina que se trata de un incidente de **Redes** con urgencia **Alta** y asigna la tarea automáticamente al técnico capacitado más cercano.
-- **Resultado esperado:** Asignación inmediata sin intervención humana y notificación en tiempo real al técnico.
+El CSV es pequeño y didáctico, no representa datos reales ni permite afirmar una precisión de producción. Para un resultado confiable, reemplaza o amplía los ejemplos con tickets reales anonimizados y etiquetas revisadas por personal de soporte. Se recomienda evaluar con un conjunto de prueba separado antes de usarlo para decisiones operativas.
 
-## 5. Requisitos del sistema
+## Paneles por rol
 
-### Backend y Servicios de IA
-- Python 3.9+
-- scikit-learn, pandas, numpy, nltk
-- Firebase Admin SDK
+- **Cliente:** crea reportes y consulta el estado y la clasificación de sus propios tickets.
+- **Soporte:** revisa la cola completa y cambia cada ticket entre Pendiente, En proceso y Resuelto.
+- **Administrador:** consulta métricas generales, categorías detectadas, usuarios registrados y todos los tickets; también puede actualizar su estado.
 
-### Frontend (Web App Instalable / PWA)
-- Navegador web moderno (Chrome, Edge, Safari)
-- HTML5, CSS3, JavaScript (o framework React/Vue/Svelte)
-- Service Workers y Web App Manifest (para función offline e instalación)
+El formulario público solo permite crear cuentas de cliente o soporte. La cuenta de administrador de demostración se crea mediante la inicialización local de la base de datos.
 
----
+## Requisitos
 
-## 6. Instrucciones de instalación y ejecución
+- Python 3.9 o posterior
+- Dependencias indicadas en `requirements.txt`
 
-### Opción A: Uso como Aplicación Web Instalable (PWA)
-1. Abrir la URL de la aplicación desde cualquier navegador móvil o de escritorio: `https://smartdispatch.web.app` (URL de despliegue).
-2. Hacer clic en la barra del navegador en la opción **"Instalar aplicación"** o **"Agregar a la pantalla de inicio"**.
-3. Ejecutar la app directamente desde el ícono generado en el escritorio o menú del dispositivo.
+## Instalación y ejecución
 
-### Opción B: Ejecución Local del Servidor/Backend
-1. Clonar el repositorio:
-   ```bash
-   git clone [https://github.com/mty86/SmartDispatch.git](https://github.com/mty86/SmartDispatch.git)
-   cd SmartDispatch
+```bash
+python -m venv .venv
+```
+
+En Windows:
+
+```powershell
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python train_model.py
+python app.py
+```
+
+Abre `http://127.0.0.1:5000`. La base de datos SQLite y las cuentas de demostración se inicializan automáticamente. Para iniciar sesión:
+
+- Cliente: `cliente@smartdispatch.com` / `cliente123`
+- Soporte: `soporte@smartdispatch.com` / `soporte123`
+- Administrador: `admin@smartdispatch.com` / `admin123`
+
+El modelo se guarda en `ml/modelo_tickets.joblib`. Si no existe, la aplicación lo entrena automáticamente al procesar el primer ticket. Para volver a entrenarlo después de editar el CSV, ejecuta `python train_model.py`.
+
+## Estructura
+
+```text
+app.py                  Aplicación Flask y flujo de tickets
+database.py             Inicialización y acceso a SQLite
+schema.sql              Esquema de usuarios, roles y tickets
+ml/clasificador.py      Entrenamiento e inferencia del modelo
+ml/tickets_ejemplo.csv Datos de ejemplo etiquetados
+train_model.py          Comando para entrenar el modelo
+templates/              Vistas HTML
+```
+
+## Mejoras para una evaluación académica
+
+1. Reunir tickets anonimizados con categoría y prioridad verificadas.
+2. Separar entrenamiento y prueba de forma estratificada.
+3. Reportar precisión, recall y F1 por clase, además de una matriz de confusión.
+4. Comparar el modelo con una línea base y documentar errores frecuentes.
+5. Reentrenar con tickets resueltos y monitorear cambios en la calidad.

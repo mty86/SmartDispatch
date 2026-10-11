@@ -1,0 +1,36 @@
+descripcion,categoria,prioridad
+La computadora no enciende y el equipo del área está detenido,Hardware,Alta
+El monitor de mi estación parpadea y no muestra imagen,Hardware,Media
+El teclado de la computadora dejó de funcionar,Hardware,Media
+La laptop se calienta demasiado y se apaga,Hardware,Alta
+El mouse falla ocasionalmente,Hardware,Baja
+La pantalla del equipo está rota y no puedo trabajar,Hardware,Alta
+El equipo hace un ruido extraño al iniciar,Hardware,Media
+La computadora está muy lenta desde esta mañana,Hardware,Media
+No hay internet en toda la oficina,Redes,Alta
+El router principal está apagado y nadie tiene conexión,Redes,Alta
+El wifi se desconecta varias veces al día,Redes,Media
+La conexión de red es intermitente en mi área,Redes,Media
+Cuando puedan revisen la señal wifi de la sala,Redes,Baja
+La red cableada no reconoce mi equipo,Redes,Media
+El servidor de red no responde y el servicio está detenido,Redes,Alta
+La señal de internet está lenta,Redes,Media
+La impresora no imprime documentos urgentes,Impresoras,Alta
+La impresora muestra atasco de papel aunque está vacía,Impresoras,Media
+Necesito cambiar el cartucho de tóner,Impresoras,Baja
+La impresora de recepción dejó de funcionar,Impresoras,Alta
+Los documentos salen con manchas al imprimir,Impresoras,Media
+Cuando tengan tiempo revisen la impresora del segundo piso,Impresoras,Baja
+La impresora no aparece conectada a la red,Impresoras,Media
+El escáner de la impresora no funciona,Impresoras,Media
+La aplicación de facturación muestra un error crítico,Software,Alta
+Windows no inicia correctamente después de actualizar,Software,Alta
+El sistema se cierra cuando guardo un reporte,Software,Alta
+El programa tarda mucho en abrir,Software,Media
+Cuando puedan instalen la actualización de la aplicación,Software,Baja
+No puedo iniciar sesión en el sistema de nómina,Software,Alta
+La aplicación muestra un mensaje de error al exportar,Software,Media
+Solicito ayuda para configurar el programa,Software,Baja
+El sistema funciona pero necesito cambiar una preferencia,Software,Baja
+El correo de la aplicación no sincroniza,Software,Media
+El software se congela al abrir un archivo grande,Software,Media
