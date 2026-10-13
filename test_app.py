@@ -1,7 +1,8 @@
 """
-Pruebas del Sistema de Login y Registro (SmartDispatch)
+Pruebas del Sistema de Login, Registro y PWA Híbrida (SmartDispatch)
 """
 
+import os
 import time
 import unittest
 from app import app
@@ -89,6 +90,30 @@ class LoginTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Iniciar Sesi", response.data)
         print("[OK] Cierre de sesión validado.")
+
+    def test_06_pwa_manifest_disponible(self):
+        """Verifica que el archivo manifest.json esté disponible para instalación PWA."""
+        response = self.client.get("/manifest.json")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"SmartDispatch", response.data)
+        self.assertIn(b"standalone", response.data)
+        print("[OK] Ruta PWA /manifest.json disponible y válida.")
+
+    def test_07_pwa_service_worker_disponible(self):
+        """Verifica que el Service Worker sw.js esté disponible y con headers correctos."""
+        response = self.client.get("/sw.js")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers.get("Service-Worker-Allowed"), "/")
+        self.assertIn(b"smartdispatch", response.data)
+        print("[OK] Service Worker /sw.js configurado y listo.")
+
+    def test_08_pwa_iconos_existen(self):
+        """Verifica que los íconos de la aplicación existan en el sistema de archivos."""
+        self.assertTrue(os.path.exists("static/icons/icon-192.png"))
+        self.assertTrue(os.path.exists("static/icons/icon-512.png"))
+        resp192 = self.client.get("/static/icons/icon-192.png")
+        self.assertEqual(resp192.status_code, 200)
+        print("[OK] Íconos de aplicación 192x192 y 512x512 verificados.")
 
 if __name__ == "__main__":
     unittest.main()

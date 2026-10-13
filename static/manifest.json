@@ -1,0 +1,25 @@
+{
+  "name": "SmartDispatch - Plataforma de Soporte",
+  "short_name": "SmartDispatch",
+  "description": "Sistema de autenticación y soporte técnico SmartDispatch",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f8fafc",
+  "theme_color": "#2563eb",
+  "categories": ["business", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/static/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

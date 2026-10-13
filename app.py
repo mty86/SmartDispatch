@@ -5,7 +5,7 @@ Servidor Web Flask con autenticación segura en base de datos SQLite.
 
 import os
 from functools import wraps
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, send_from_directory, make_response
 from werkzeug.security import check_password_hash, generate_password_hash
 import database
 from ml.clasificador import clasificar_ticket
@@ -320,13 +320,26 @@ def actualizar_estado_ticket(ticket_id):
         flash(f"El ticket #{ticket_id} ahora está: {estado}.", "success")
     else:
         flash("No se encontró ese ticket.", "warning")
-    return redirect(url_for("home"))
-
 @app.route("/logout")
 def logout():
     session.clear()
     flash("Has cerrado sesión satisfactoriamente.", "info")
     return redirect(url_for("login"))
 
+# ==========================================================
+# RUTAS DE APLICACIÓN HÍBRIDA (PWA)
+# ==========================================================
+@app.route("/manifest.json")
+def pwa_manifest():
+    return send_from_directory("static", "manifest.json", mimetype="application/manifest+json")
+
+@app.route("/sw.js")
+def pwa_service_worker():
+    response = make_response(send_from_directory("static", "sw.js", mimetype="application/javascript; charset=utf-8"))
+    response.headers["Service-Worker-Allowed"] = "/"
+    response.headers["Cache-Control"] = "no-cache"
+    return response
+
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000, debug=False)
+

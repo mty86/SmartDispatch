@@ -3,7 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}SmartDispatch | Login{% endblock %}</title>
+    <title>{% block title %}SmartDispatch | Soporte{% endblock %}</title>
+
+    <!-- METADATOS Y MANIFIESTO PWA (APLICACIÓN HÍBRIDA) -->
+    <link rel="manifest" href="{{ url_for('pwa_manifest') }}">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="SmartDispatch">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='icons/icon-192.png') }}">
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -56,10 +67,77 @@
         {% block content %}{% endblock %}
     </main>
 
+    <!-- BOTÓN FLOTANTE PARA DESCARGAR / INSTALAR APLICACIÓN HÍBRIDA -->
+    <div id="pwa-install-container" class="fixed bottom-6 right-6 z-50 transition-all duration-300">
+        <button id="pwa-install-btn" type="button"
+                class="flex items-center space-x-2.5 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold text-xs rounded-2xl shadow-xl shadow-blue-500/30 transform hover:-translate-y-0.5 transition duration-200 border border-blue-400/30">
+            <i class="fa-solid fa-download text-sm"></i>
+            <span>Descargar / Instalar App</span>
+        </button>
+    </div>
+
     <!-- PIE DE PÁGINA DISCRETO -->
     <footer class="py-4 text-center text-xs text-slate-400">
         SmartDispatch &copy; 2026 • Sistema de Soporte
     </footer>
+
+    <!-- SCRIPT DE REGISTRO E INSTALACIÓN PWA -->
+    <script>
+        // 1. Registro del Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('ServiceWorker PWA registrado:', reg.scope))
+                    .catch(err => console.log('Error en ServiceWorker:', err));
+            });
+        }
+
+        // 2. Control de instalación de la aplicación híbrida
+        let deferredPrompt = null;
+        const installContainer = document.getElementById('pwa-install-container');
+        const installBtn = document.getElementById('pwa-install-btn');
+
+        // Comprobar si ya está instalada y ejecutándose en modo standalone
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+        if (isStandalone) {
+            if (installContainer) installContainer.style.display = 'none';
+        } else {
+            // Capturar evento de instalación del navegador (Chrome, Edge, Android)
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                if (installContainer) installContainer.style.display = 'block';
+            });
+
+            if (installBtn) {
+                installBtn.addEventListener('click', async () => {
+                    if (deferredPrompt) {
+                        deferredPrompt.prompt();
+                        const { outcome } = await deferredPrompt.userChoice;
+                        console.log('Resultado de la instalación:', outcome);
+                        if (outcome === 'accepted') {
+                            deferredPrompt = null;
+                            if (installContainer) installContainer.style.display = 'none';
+                        }
+                    } else {
+                        // Indicaciones según plataforma para cuando no se puede invocar directamente
+                        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                        if (isIOS) {
+                            alert("📲 Para instalar SmartDispatch en tu iPhone / iPad:\n\n1. Toca el botón 'Compartir' (cuadrado con flecha hacia arriba) en Safari.\n2. Selecciona 'Agregar a la pantalla de inicio'.");
+                        } else {
+                            alert("📲 Para instalar SmartDispatch:\n\n• En PC (Chrome / Edge): Haz clic en el ícono de 'Instalar aplicación' que aparece en la parte derecha de la barra de direcciones.\n• En Android: Toca el menú de tres puntos ⋮ y presiona 'Instalar aplicación' o 'Agregar a la pantalla principal'.");
+                        }
+                    }
+                });
+            }
+
+            window.addEventListener('appinstalled', () => {
+                console.log('SmartDispatch PWA instalada exitosamente.');
+                if (installContainer) installContainer.style.display = 'none';
+            });
+        }
+    </script>
 
 </body>
 </html>

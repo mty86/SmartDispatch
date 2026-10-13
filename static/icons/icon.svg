@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e40af" />
+      <stop offset="100%" stop-color="#3b82f6" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)" />
+  <!-- Headset Icon -->
+  <path d="M 256 120 C 180 120 120 180 120 256 L 120 310 C 120 330 135 345 155 345 L 175 345 C 195 345 210 330 210 310 L 210 260 C 210 240 195 225 175 225 L 160 225 C 160 172 203 160 256 160 C 309 160 352 172 352 225 L 337 225 C 317 225 302 240 302 260 L 302 310 C 302 330 317 345 337 345 L 357 345 C 377 345 392 330 392 310 L 392 256 C 392 180 332 120 256 120 Z" fill="#ffffff" />
+  <!-- Microphone curve -->
+  <path d="M 352 345 C 352 385 300 400 270 400 L 250 400" stroke="#ffffff" stroke-width="16" stroke-linecap="round" fill="none" />
+  <circle cx="240" cy="400" r="14" fill="#ffffff" />
+</svg>
